@@ -93,7 +93,7 @@
     else e.innerHTML = '<i class="fa-solid fa-circle-half-stroke"></i> Borrador · ' + redesActivas().length + " red(es) · " + imgsUsadas().length + " foto(s)" +
       (S.actualizado ? ' <span class="tenue">· guardado ' + new Date(S.actualizado).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }) + "</span>" : "");
     $("#btn-publicar").disabled = !S.noticia;
-    $("#btn-publicar").innerHTML = '<i class="fa-solid fa-paper-plane"></i> Publicar en ' + (1 + redesActivas().length) + " destino" + (redesActivas().length ? "s" : "");
+    $("#btn-publicar").innerHTML = '<i class="fa-solid fa-paper-plane"></i> Publicar<span class="solo-pc"> en ' + (1 + redesActivas().length) + " destino" + (redesActivas().length ? "s" : "") + '</span><b class="cuenta solo-movil">' + (1 + redesActivas().length) + "</b>";
     $("#cuenta-redes").textContent = redesActivas().length;
     $("#cuenta-imgs").textContent = imgsUsadas().length;
   }
@@ -232,6 +232,7 @@
     sel.innerHTML = cats.map(function (c) { return "<option" + (c === n.categoria ? " selected" : "") + ">" + esc(c) + "</option>"; }).join("");
     $("#f-titulo").value = n.titulo;
     $("#f-bajada").value = n.bajada;
+    autoAlto($("#f-titulo")); autoAlto($("#f-bajada"));
     $("#f-fecha").value = n.fecha;
     $("#f-slug").value = n.slug;
     $("#f-etiquetas").value = (n.etiquetas || []).join(", ");
@@ -251,7 +252,15 @@
     }).join("");
     $$("#f-cuerpo textarea").forEach(autoAlto);
   }
-  function autoAlto(t) { t.style.height = "auto"; t.style.height = t.scrollHeight + 2 + "px"; }
+  // Alto justo para el texto. Si el cuadro está oculto (otra pestaña, o el chat en el celular) no se puede medir:
+  // se deja como está y se ajusta al mostrarse (ajustarAltos).
+  function autoAlto(t) {
+    if (!t || !t.offsetParent) return;
+    t.style.height = "auto"; t.style.height = t.scrollHeight + 2 + "px";
+  }
+  function ajustarAltos() {
+    $$("#f-titulo, #f-bajada, #f-cuerpo textarea, #redes textarea").forEach(autoAlto);
+  }
   function pintarLink() { var a = $("#f-link"); a.href = link(); a.textContent = link(); }
   function contadores() {
     $$(".contador[data-de]").forEach(function (c) {
@@ -266,8 +275,8 @@
     f.addEventListener("input", function (e) {
       var t = e.target, n = S.noticia;
       if (!n) return;
-      if (t.id === "f-titulo") { n.titulo = t.value; if (!S.slugManual) { n.slug = IA.slugify(t.value); $("#f-slug").value = n.slug; pintarLink(); } }
-      else if (t.id === "f-bajada") n.bajada = t.value;
+      if (t.id === "f-titulo") { if (/\n/.test(t.value)) t.value = t.value.replace(/\s*\n+\s*/g, " "); autoAlto(t); n.titulo = t.value; if (!S.slugManual) { n.slug = IA.slugify(t.value); $("#f-slug").value = n.slug; pintarLink(); } }
+      else if (t.id === "f-bajada") { n.bajada = t.value; autoAlto(t); }
       else if (t.id === "f-fecha") n.fecha = t.value;
       else if (t.id === "f-slug") { S.slugManual = true; n.slug = IA.slugify(t.value.replace(/-/g, " ")) ; pintarLink(); }
       else if (t.id === "f-etiquetas") n.etiquetas = t.value.split(",").map(function (s) { return s.trim(); }).filter(Boolean);
@@ -275,6 +284,7 @@
       contadores();
       persistirLuego();
     });
+    $("#f-titulo").addEventListener("keydown", function (e) { if (e.key === "Enter") e.preventDefault(); });
     f.addEventListener("change", function (e) {
       if (e.target.id === "f-categoria") { S.noticia.categoria = e.target.value; persistirLuego(); }
       if (e.target.id === "f-slug") e.target.value = S.noticia.slug;
@@ -766,11 +776,12 @@
     if (id === "previa") pintarPrevia();
     if (id === "redes") pintarRedes();
     if (id === "imagenes") { pintarGaleria(); pintarDisenador(); }
-    vistaMovil("trabajo");
+    vistaMovil("trabajo"); // también ajusta el alto de los cuadros de la pestaña que se muestra
   }
   function vistaMovil(v) {
     $("#app").setAttribute("data-vista", v);
     $$(".vista-movil button").forEach(function (b) { b.classList.toggle("activo", b.getAttribute("data-vista") === v); });
+    ajustarAltos();
   }
 
   function pintarTodo() {
@@ -950,6 +961,8 @@
 
     $$(".tab").forEach(function (t) { t.addEventListener("click", function () { irTab(t.getAttribute("data-tab")); }); });
     $$(".vista-movil button").forEach(function (b) { b.addEventListener("click", function () { vistaMovil(b.getAttribute("data-vista")); }); });
+    var anchoPrevio = window.innerWidth;
+    window.addEventListener("resize", function () { if (window.innerWidth !== anchoPrevio) { anchoPrevio = window.innerWidth; ajustarAltos(); } });
 
     $("#btn-guardar").addEventListener("click", function () { persistir(true); });
     $("#btn-publicar").addEventListener("click", confirmarPublicacion);

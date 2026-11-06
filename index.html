@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Bebas+Neue&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="assets/css/styles.css">
+  <link rel="stylesheet" href="assets/css/styles.css?v=20261106d">
 </head>
 <body>
   <header class="top">
@@ -84,7 +84,7 @@
           <form class="form" id="form-web" hidden>
             <div class="fila">
               <label class="campo campo--grande">Título
-                <input id="f-titulo" maxlength="140" required>
+                <textarea id="f-titulo" rows="1" maxlength="140" required></textarea>
                 <small class="contador" data-de="f-titulo" data-max="110"></small>
               </label>
             </div>
@@ -196,7 +196,7 @@
       <footer class="barra">
         <span class="barra__estado" id="estado"><i class="fa-regular fa-circle"></i> Sin borrador</span>
         <div class="barra__acciones">
-          <button type="button" class="btn btn--ghost-osc" id="btn-guardar"><i class="fa-regular fa-floppy-disk"></i> Guardar borrador</button>
+          <button type="button" class="btn btn--ghost-osc" id="btn-guardar"><i class="fa-regular fa-floppy-disk"></i> Guardar<span class="solo-pc"> borrador</span></button>
           <button type="button" class="btn btn--pri" id="btn-publicar" disabled><i class="fa-solid fa-paper-plane"></i> Publicar</button>
         </div>
       </footer>
@@ -221,14 +221,15 @@
 
   <div class="toasts" id="toasts" aria-live="polite"></div>
 
-  <script src="assets/js/config.js"></script>
-  <script src="assets/js/contexto.js"></script>
-  <script src="assets/js/ia.js"></script>
-  <script src="assets/js/voz.js"></script>
-  <script src="assets/js/plantillas.js"></script>
-  <script src="assets/js/fotos.js"></script>
-  <script src="assets/js/disenoHtml.js"></script>
-  <script src="assets/js/imagenes.js"></script>
-  <script src="assets/js/app.js"></script>
+  <script src="assets/js/config.js?v=20261106d"></script>
+  <script src="assets/js/contexto.js?v=20261106d"></script>
+  <script src="assets/js/ia.js?v=20261106d"></script>
+  <script src="assets/js/voz.js?v=20261106d"></script>
+  <script src="assets/js/iconos.js?v=20261106d"></script>
+  <script src="assets/js/plantillas.js?v=20261106d"></script>
+  <script src="assets/js/fotos.js?v=20261106d"></script>
+  <script src="assets/js/disenoHtml.js?v=20261106d"></script>
+  <script src="assets/js/imagenes.js?v=20261106d"></script>
+  <script src="assets/js/app.js?v=20261106d"></script>
 </body>
 </html>

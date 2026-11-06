@@ -152,9 +152,7 @@ window.DisenoHtml = (function () {
         return u ? aDataUrl(u.replace(/['"]/g, "")).then(function (d) { return b.replace(u, d); }) : b;
       }));
     }).then(function (bloques) {
-      return aDataUrl("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/webfonts/fa-solid-900.woff2").then(function (fa) {
-        return bloques.join("\n") + "\n@font-face{font-family:'Font Awesome 6 Free';font-style:normal;font-weight:900;src:url(" + fa + ") format('woff2');}";
-      });
+      return bloques.join("\n"); // los íconos van como SVG (Iconos.svg), no dependen de una fuente
     }).catch(function (e) { fuentes = null; throw e; });
     return fuentes;
   }
@@ -178,16 +176,30 @@ window.DisenoHtml = (function () {
 
   var CSS_BASE = ".pieza{box-sizing:border-box;font-family:Poppins,sans-serif;color:var(--tinta);-webkit-font-smoothing:antialiased}" +
     ".pieza *{box-sizing:border-box}.pieza p,.pieza h1,.pieza h2,.pieza h3{margin:0}" +
-    ".pieza .fa-icono{font-family:'Font Awesome 6 Free';font-weight:900;font-style:normal;line-height:1;display:inline-block}" +
+    ".pieza .fa-icono{font-style:normal;line-height:1;display:inline-flex;align-items:center;justify-content:center;vertical-align:-0.125em}" +
+    ".pieza .fa-icono svg{flex:none}" +
     ".pieza .firma{display:flex;align-items:center;gap:16px;line-height:1.15}";
+
+  // Nombres de ícono en las clases ("fa-solid fa-lg fa-paw" → ["paw"]); sin las de estilo o tamaño.
+  var NO_ICONO = /^(solid|regular|brands|light|thin|duotone|sharp|fw|xs|sm|lg|xl|2xl|[0-9]+x|spin|pulse|beat|fade|bounce|shake|flip|flip-horizontal|flip-vertical|rotate-[0-9]+|border|pull-left|pull-right|stack|stack-1x|stack-2x|inverse|ul|li|icono)$/;
+  function nombresIcono(clases) {
+    return (String(clases || "").match(/\bfa-[a-z0-9-]+\b/g) || []).map(function (c) { return c.slice(3); }).filter(function (n) { return !NO_ICONO.test(n); });
+  }
+  function cargarIconos(codigo) {
+    var nombres = [];
+    String(codigo || "").replace(/class\s*=\s*["']([^"']*)["']/gi, function (m, c) { nombres = nombres.concat(nombresIcono(c)); return m; });
+    return Iconos.cargar(nombres);
+  }
 
   // Arma el HTML final (con iconos resueltos y recursos incrustados) para un ancho/alto.
   function preparar(codigo, W, H, pal, foto, esc) {
     var doc = sanear(codigo);
-    $$(doc, "i[class*='fa-']").forEach(function (i) {
-      var nombre = (i.className.match(/fa-(?!solid|regular|brands)([a-z0-9-]+)/) || [])[1];
-      i.className = i.className.replace(/\bfa-(solid|regular|brands)\b/g, "").replace(/\bfa-[a-z0-9-]+\b/g, "").trim() + " fa-icono";
-      i.textContent = nombre ? Plantillas.glifo(nombre) : "";
+    $$(doc, "[class*='fa-']").forEach(function (i) {
+      var nombres = nombresIcono(i.getAttribute("class"));
+      if (!nombres.length) return;
+      var nombre = nombres.filter(Iconos.hay)[0] || "circle-info";
+      i.setAttribute("class", i.getAttribute("class").replace(/\bfa-[a-z0-9-]+\b/g, "").replace(/\s+/g, " ").trim() + " fa-icono");
+      i.innerHTML = Iconos.svg(nombre);
     });
     var cont = doc.createElement("div");
     while (doc.body.firstChild) cont.appendChild(doc.body.firstChild);
@@ -199,14 +211,14 @@ window.DisenoHtml = (function () {
 
   /* ---------------- Revisión ---------------- */
   function revisar(codigo, W, H, pal, foto) {
-    return datosEscudo().then(function (esc) {
-      var prep = preparar(codigo, W, H, pal, foto, esc);
+    return Promise.all([datosEscudo(), cargarIconos(codigo)]).then(function (r0) {
+      var esc = r0[0], prep = preparar(codigo, W, H, pal, foto, esc);
       return new Promise(function (ok) {
         var f = document.createElement("iframe");
         f.setAttribute("sandbox", "allow-same-origin"); // sin scripts
         f.style.cssText = "position:fixed;left:-20000px;top:0;width:" + W + "px;height:" + H + "px;border:0;visibility:hidden";
         f.srcdoc = "<!doctype html><html><head><meta charset='utf-8'><link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Montserrat:wght@600;700;800&family=Bebas+Neue&display=block'>" +
-          "<style>html,body{margin:0}.fa-icono{font-family:'Font Awesome 6 Free'!important}" + prep.css + "</style></head><body>" + prep.html + "</body></html>";
+          "<style>html,body{margin:0}" + prep.css + "</style></head><body>" + prep.html + "</body></html>";
         f.onload = function () {
           var d = f.contentDocument;
           (d.fonts ? d.fonts.ready : Promise.resolve()).then(function () {
@@ -310,7 +322,7 @@ window.DisenoHtml = (function () {
 
   /* ---------------- Render a imagen ---------------- */
   function dibujar(codigo, W, H, pal, foto) {
-    return Promise.all([cssFuentes(), datosEscudo()]).then(function (r) {
+    return Promise.all([cssFuentes(), datosEscudo(), cargarIconos(codigo)]).then(function (r) {
       var prep = preparar(codigo, W, H, pal, foto, r[1]);
       // pasar a XHTML para poder meterlo en el SVG
       var doc = document.implementation.createHTMLDocument("");

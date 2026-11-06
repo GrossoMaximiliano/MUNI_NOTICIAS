@@ -42,6 +42,9 @@ y las **versiones para cada red social**, listas para revisar, diseñar las imá
      problemas, se le pide una corrección; si siguen, se prueba otra dirección de arte; si tampoco queda prolijo, la pieza
      se queda con la plantilla (nunca se publica una pieza rota) y la propuesta de la IA queda guardada para verla.
    - Se dibuja como imagen con SVG `foreignObject` con fuentes, foto y escudo incrustados (sin librerías).
+   - **Íconos**: en las plantillas y en el diseño IA se dibujan con el trazo SVG de Font Awesome (`assets/js/iconos.js`),
+     no con su fuente. Antes, si la fuente no terminaba de cargar, el ícono salía como un cuadradito. Un nombre que no
+     existe se reemplaza por el ícono de información.
    - Con `disenoAuto: "ia"` en `config.js`, la primera pieza se diseña sola al redactar. El código se puede ver y editar.
    - Modelo: Kimi K3.1 Pro (perfil `diseno` del proxy), ~35 s y ~USD 0,07 por pieza: el de mejor resultado visual en el
      comparativo. Lo que hizo cada modelo está en [docs/modelos](docs/modelos). Costos en [docs/proxy-ia.md](docs/proxy-ia.md).
@@ -88,6 +91,7 @@ assets/js/contexto.js      Carga window.SITE de Muni-Land y arma el contexto par
 assets/js/ia.js            Prompt de redacción, /ia/chat, /ia/transcribe, borrador local y contador de costos
 assets/js/disenoHtml.js    Diseño con IA en HTML/CSS: direcciones de arte, saneado, revisión y render a imagen
 assets/js/voz.js           Grabación → WAV → transcripción (o dictado del navegador)
+assets/js/iconos.js        Íconos como trazo SVG (Font Awesome 6 Free) para canvas y HTML
 assets/js/plantillas.js    Plantillas de diseño estilo Municipalidad (canvas), paletas, íconos y firma con el escudo
 assets/js/fotos.js         Búsqueda de fotos ilustrativas con licencia libre (Wikimedia Commons, Openverse)
 assets/js/imagenes.js      Piezas: foto de fondo + plantilla, carga y render por formato

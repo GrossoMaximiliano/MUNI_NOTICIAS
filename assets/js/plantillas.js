@@ -18,7 +18,6 @@
 window.Plantillas = (function () {
   var FUENTE = "Poppins, 'Segoe UI', sans-serif";
   var CONDENSADA = "'Bebas Neue', Impact, sans-serif";
-  var ICONOS = "'Font Awesome 6 Free'";
 
   var PALETAS = {
     verde:     { nombre: "Ambiente",     fondo: "#f1f5e9", claro: "#e2f0d6", primario: "#14581f", secundario: "#2f7d32", acento: "#8bc34a", tinta: "#1f2a1f", oscuro: "#0d3a14", sobreAcento: "#0d3a14" },
@@ -40,8 +39,9 @@ window.Plantillas = (function () {
     new Promise(function (ok) { escudo.onload = ok; escudo.onerror = ok; escudo.src = "assets/img/escudo-256.png"; }),
     document.fonts ? Promise.all([
       "400 40px Poppins", "italic 400 40px Poppins", "500 40px Poppins", "600 40px Poppins", "700 40px Poppins", "800 40px Poppins",
-      "italic 600 40px Poppins", "400 40px 'Bebas Neue'", "900 40px 'Font Awesome 6 Free'"
-    ].map(function (f) { return document.fonts.load(f).catch(function () {}); })) : null
+      "italic 600 40px Poppins", "400 40px 'Bebas Neue'"
+    ].map(function (f) { return document.fonts.load(f).catch(function () {}); })) : null,
+    Iconos.listo
   ]).then(function () {
     if (!escudo.naturalWidth) return;
     var c = document.createElement("canvas");
@@ -52,22 +52,6 @@ window.Plantillas = (function () {
     x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height);
     escudoBlanco = c;
   });
-
-  // Carácter de un ícono de Font Awesome a partir de su nombre ("paw", "location-dot"…).
-  var glifos = {};
-  function glifo(nombre) {
-    nombre = String(nombre || "circle-info").replace(/^fa-/, "");
-    if (glifos[nombre] !== undefined) return glifos[nombre] || glifo("circle-info");
-    var i = document.createElement("i");
-    i.className = "fa-solid fa-" + nombre;
-    i.style.cssText = "position:absolute;left:-9999px";
-    document.body.appendChild(i);
-    var c = getComputedStyle(i, "::before").content;
-    i.remove();
-    c = c && c !== "none" && c !== "normal" ? c.replace(/^["']|["']$/g, "") : "";
-    glifos[nombre] = c;
-    return c || (nombre === "circle-info" ? "i" : glifo("circle-info"));
-  }
 
   /* ---------------- Ayudas de dibujo ---------------- */
   function cover(ctx, img, x, y, w, h, fx, fy) {
@@ -223,8 +207,7 @@ window.Plantillas = (function () {
       if (o.flecha) {
         var cx = x + w - px - o.tam * 0.55, cy = this.y + h / 2, r = o.tam * 0.55;
         ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fillStyle = o.color; ctx.fill();
-        ctx.font = fuente(900, o.tam * 0.6, ICONOS); ctx.fillStyle = o.fondo || "#fff"; ctx.textAlign = "center";
-        ctx.fillText(glifo("arrow-right"), cx, cy + o.tam * 0.03); ctx.textAlign = "left";
+        Iconos.pintar(ctx, "arrow-right", cx, cy, o.tam * 0.6, o.fondo || "#fff");
       }
       ctx.textBaseline = "alphabetic";
     }
@@ -241,8 +224,7 @@ window.Plantillas = (function () {
     if (tw + iw > this.w) this.desborde = true;
     var x = this.xLinea(Math.min(this.w, tw + iw), o.align);
     if (this.dib) {
-      ctx.fillStyle = o.colorIcono || o.color;
-      ctx.font = fuente(900, o.tam * 0.9, ICONOS); ctx.fillText(glifo(icono), x, this.y + o.tam);
+      Iconos.pintar(ctx, icono, x + o.tam * 0.45, this.y + o.tam * 0.64, o.tam * 0.9, o.colorIcono || o.color);
       ctx.font = fuente(o.peso || 500, o.tam); ctx.fillStyle = o.color; ctx.fillText(texto, x + iw, this.y + o.tam);
     }
     this.y += o.tam * 1.45;
@@ -275,10 +257,7 @@ window.Plantillas = (function () {
   function iconoCirculo(ctx, cx, cy, r, nombre, o) {
     ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.fillStyle = o.fondo; ctx.fill();
-    ctx.font = fuente(900, r * (o.no ? 0.95 : 0.9), ICONOS);
-    ctx.fillStyle = o.color; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.fillText(glifo(nombre), cx, cy + r * 0.04);
-    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    Iconos.pintar(ctx, nombre, cx, cy, r * (o.no ? 0.95 : 0.9), o.color);
     if (o.no) {
       ctx.lineWidth = r * 0.16; ctx.strokeStyle = "#e3463c";
       ctx.beginPath(); ctx.arc(cx, cy, r * 0.92, 0, Math.PI * 2); ctx.stroke();
@@ -332,10 +311,8 @@ window.Plantillas = (function () {
         ctx.fillStyle = hexA(i === 1 ? pal.acento : pal.claro, i === 1 ? 0.1 : 0.55); ctx.fill();
       });
     } else if (pal && V.textura === "icono") {
-      ctx.font = fuente(900, Math.max(W, H) * 0.55, ICONOS); ctx.fillStyle = hexA(pal.primario, 0.045);
-      ctx.textBaseline = "middle"; ctx.textAlign = "center";
       ctx.translate(W * 0.8, H * 0.72); ctx.rotate(-0.25);
-      ctx.fillText(glifo(icono || "leaf"), 0, 0);
+      Iconos.pintar(ctx, icono || "leaf", 0, 0, Math.max(W, H) * 0.55, hexA(pal.primario, 0.045));
     }
     ctx.restore();
     // grano muy sutil para que no quede un plano "digital"
@@ -369,8 +346,8 @@ window.Plantillas = (function () {
       ctx.lineWidth = tam * 0.035;
       for (var n = 1; n <= 3; n++) { ctx.beginPath(); ctx.arc(x + tam * 0.5, y + tam * 0.5, tam * 0.17 * n, Math.PI * 0.9, Math.PI * 2.1); ctx.stroke(); }
     } else if (V.adorno === "hojas") {
-      ctx.font = fuente(900, tam * 0.42, ICONOS); ctx.translate(x + tam * 0.3, y + tam * 0.5); ctx.rotate(-0.5);
-      ctx.fillText(glifo("leaf"), 0, 0); ctx.rotate(0.9); ctx.fillText(glifo("leaf"), tam * 0.3, -tam * 0.05);
+      ctx.translate(x + tam * 0.3, y + tam * 0.5); ctx.rotate(-0.5);
+      Iconos.pintar(ctx, "leaf", tam * 0.21, -tam * 0.15, tam * 0.42); ctx.rotate(0.9); Iconos.pintar(ctx, "leaf", tam * 0.51, -tam * 0.2, tam * 0.42);
     }
     ctx.restore();
   }
@@ -831,7 +808,9 @@ window.Plantillas = (function () {
   /* ---------------- Render ----------------
      foto: Image | null · pieza: textos compartidos · diseno: { plantilla, paleta, fx, fy } */
   function dibujar(canvas, foto, pieza, diseno) {
-    return listo.then(function () {
+    var p0 = pieza || {};
+    var usados = [p0.icono].concat((p0.items || []).map(function (it) { return it && it.icono; }));
+    return Promise.all([listo, Iconos.cargar(usados)]).then(function () {
       var W = canvas.width, H = canvas.height, ctx = canvas.getContext("2d");
       V = variante(diseno.semilla); V.semilla = diseno.semilla || 0;
       var fn = FUNCIONES[diseno.plantilla] || FUNCIONES.foto;
@@ -850,5 +829,5 @@ window.Plantillas = (function () {
     });
   }
 
-  return { variante: variante, dibujar: dibujar, paletas: PALETAS, nombres: NOMBRES, glifo: glifo, listo: listo };
+  return { variante: variante, dibujar: dibujar, paletas: PALETAS, nombres: NOMBRES, listo: listo };
 })();
