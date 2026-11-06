@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Noticias ADM · Las Toscas</title>
+  <meta name="description" content="Redacción de noticias y publicaciones en redes con IA para el área de Comunicación de la Municipalidad de Las Toscas (maqueta).">
+  <link rel="icon" type="image/png" href="assets/img/escudo-256.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="top__marca">
+      <img src="assets/img/escudo-256.png" alt="" width="40" height="40">
+      <div>
+        <strong>Noticias ADM</strong>
+        <span>Comunicación · Municipalidad de Las Toscas</span>
+      </div>
+    </div>
+    <div class="top__estado">
+      <span class="pill" id="pill-ia" title=""><i class="fa-solid fa-circle"></i> IA</span>
+      <span class="pill" id="pill-ctx" title=""><i class="fa-solid fa-circle"></i> Muni-Land</span>
+    </div>
+    <div class="top__acciones">
+      <button class="btn btn--ghost" id="btn-historial" type="button"><i class="fa-solid fa-clock-rotate-left"></i><span>Publicadas</span> <b class="cuenta" id="cuenta-historial">0</b></button>
+      <button class="btn btn--claro" id="btn-nueva" type="button"><i class="fa-solid fa-plus"></i><span>Nueva noticia</span></button>
+    </div>
+  </header>
+
+  <nav class="vista-movil" aria-label="Cambiar vista">
+    <button type="button" class="activo" data-vista="chat"><i class="fa-solid fa-microphone-lines"></i> Dictar</button>
+    <button type="button" data-vista="trabajo"><i class="fa-solid fa-pen-to-square"></i> Editar y publicar</button>
+  </nav>
+
+  <main class="app" id="app" data-vista="chat">
+    <!-- ===== Chat con el asistente ===== -->
+    <section class="chat" aria-label="Asistente de redacción">
+      <header class="chat__cabeza">
+        <span class="chat__avatar"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+        <div>
+          <strong>Asistente de redacción</strong>
+          <span id="chat-modo">Contale qué pasó o qué se viene</span>
+        </div>
+      </header>
+      <div class="chat__mensajes" id="chat-mensajes" role="log" aria-live="polite"></div>
+      <div class="chat__chips" id="chat-chips"></div>
+      <form class="chat__form" id="chat-form" autocomplete="off">
+        <div class="chat__grabando" id="chat-grabando" hidden>
+          <button type="button" class="ico ico--rojo" id="btn-cancelar-voz" aria-label="Cancelar grabación" title="Cancelar"><i class="fa-solid fa-xmark"></i></button>
+          <span class="rec"></span>
+          <span id="voz-texto">Grabando…</span>
+          <span class="reloj" id="voz-reloj">0:00</span>
+        </div>
+        <textarea id="chat-input" rows="2" placeholder="Escribí o grabá un audio: qué, cuándo, dónde, quién organiza…" aria-label="Mensaje para el asistente"></textarea>
+        <div class="chat__botones">
+          <button type="button" class="ico ico--mic" id="btn-mic" aria-label="Grabar audio" title="Grabar audio"><i class="fa-solid fa-microphone"></i></button>
+          <button type="submit" class="ico ico--enviar" id="btn-enviar" aria-label="Enviar" title="Enviar"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+      </form>
+      <button type="button" class="chat__forzar" id="btn-forzar"><i class="fa-solid fa-bolt"></i> Redactar ya con lo que conté</button>
+    </section>
+
+    <!-- ===== Área de trabajo ===== -->
+    <section class="trabajo" aria-label="Editor de la publicación">
+      <div class="tabs" role="tablist">
+        <button role="tab" type="button" class="tab activo" data-tab="web" aria-selected="true"><i class="fa-solid fa-newspaper"></i> Noticia web</button>
+        <button role="tab" type="button" class="tab" data-tab="redes" aria-selected="false"><i class="fa-solid fa-share-nodes"></i> Redes <b class="cuenta" id="cuenta-redes">0</b></button>
+        <button role="tab" type="button" class="tab" data-tab="imagenes" aria-selected="false"><i class="fa-solid fa-images"></i> Imágenes <b class="cuenta" id="cuenta-imgs">0</b></button>
+        <button role="tab" type="button" class="tab" data-tab="previa" aria-selected="false"><i class="fa-solid fa-eye"></i> Vista previa</button>
+      </div>
+
+      <div class="paneles">
+        <!-- Noticia web -->
+        <div class="panel activo" data-panel="web" role="tabpanel">
+          <div class="vacio" id="web-vacio">
+            <i class="fa-regular fa-newspaper"></i>
+            <h2>Todavía no hay noticia</h2>
+            <p>Contale al asistente qué pasó (por audio o escrito). Va a redactar la noticia para la web y los textos para cada red. Después podés editar todo acá.</p>
+          </div>
+          <form class="form" id="form-web" hidden>
+            <div class="fila">
+              <label class="campo campo--grande">Título
+                <input id="f-titulo" maxlength="140" required>
+                <small class="contador" data-de="f-titulo" data-max="110"></small>
+              </label>
+            </div>
+            <label class="campo">Bajada
+              <textarea id="f-bajada" rows="2" maxlength="320"></textarea>
+              <small class="contador" data-de="f-bajada" data-max="260"></small>
+            </label>
+            <div class="fila fila--3">
+              <label class="campo">Categoría
+                <select id="f-categoria"></select>
+              </label>
+              <label class="campo">Fecha
+                <input id="f-fecha" type="date">
+              </label>
+              <label class="campo">Dirección (slug)
+                <input id="f-slug" pattern="[a-z0-9-]+">
+              </label>
+            </div>
+            <div class="link-nota"><i class="fa-solid fa-link"></i> <a id="f-link" href="#" target="_blank" rel="noopener"></a>
+              <button type="button" class="mini" id="btn-copiar-link"><i class="fa-regular fa-copy"></i> Copiar</button></div>
+            <div class="campo">
+              <div class="campo__cabeza">Cuerpo <span class="ayuda">Un párrafo por bloque</span></div>
+              <div id="f-cuerpo" class="parrafos"></div>
+              <button type="button" class="mini" id="btn-parrafo"><i class="fa-solid fa-plus"></i> Agregar párrafo</button>
+            </div>
+            <label class="campo">Etiquetas
+              <input id="f-etiquetas" placeholder="separadas por coma">
+            </label>
+            <div class="sugerencias" id="sugerencias" hidden></div>
+          </form>
+        </div>
+
+        <!-- Redes -->
+        <div class="panel" data-panel="redes" role="tabpanel">
+          <p class="intro">Elegí dónde publicar. Cada red tiene su versión; donde dice <code>{{LINK}}</code> va la dirección de la nota en la web.</p>
+          <div class="redes" id="redes"></div>
+        </div>
+
+        <!-- Imágenes -->
+        <div class="panel" data-panel="imagenes" role="tabpanel">
+          <p class="intro">Cada pieza lleva el escudo y textos con buen contraste. El diseño lo arman plantillas con el estilo de las publicaciones de la Municipalidad; la IA sólo elige plantilla, colores, textos y foto.</p>
+          <div class="fuentes">
+            <label class="soltar" id="soltar">
+              <input type="file" id="f-imgs" accept="image/*" multiple hidden>
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <strong>Subir fotos propias</strong>
+              <span>Del hecho real. Arrastralas o tocá para elegir.</span>
+            </label>
+            <button type="button" class="fuente" id="btn-buscar-foto"><i class="fa-solid fa-magnifying-glass"></i><strong>Foto ilustrativa</strong><span>Bancos libres con licencia</span></button>
+            <button type="button" class="fuente" id="btn-sin-foto"><i class="fa-solid fa-palette"></i><strong>Pieza sin foto</strong><span>Comunicado con colores e íconos</span></button>
+          </div>
+          <div class="galeria" id="galeria"></div>
+          <div class="disenador" id="disenador" hidden>
+            <div class="disenador__lienzo">
+              <div class="formatos" id="formatos"></div>
+              <div class="lienzo"><canvas id="lienzo"></canvas></div>
+              <p class="aviso-entra" id="aviso-entra" hidden></p>
+              <p class="credito" id="credito" hidden></p>
+            </div>
+            <div class="disenador__opciones">
+              <div class="campo">
+                <div class="campo__cabeza">Cómo se diseña</div>
+                <div class="seg" id="op-modo">
+                  <button type="button" data-v="plantilla"><i class="fa-solid fa-table-cells-large"></i> Plantilla</button>
+                  <button type="button" data-v="ia"><i class="fa-solid fa-wand-magic-sparkles"></i> Diseño IA</button>
+                </div>
+              </div>
+              <div class="ia-diseno" id="op-ia" hidden>
+                <p class="ayuda">La IA arma la composición en HTML/CSS con las reglas de marca (escudo, colores, Poppins, contraste) y una dirección de arte distinta cada vez. Se revisa sola que nada se salga.</p>
+                <p class="ia-estado" id="ia-estado"></p>
+                <ul class="ia-problemas" id="ia-problemas" hidden></ul>
+                <button type="button" class="btn btn--pri btn--block" id="btn-disenar-ia"><i class="fa-solid fa-wand-magic-sparkles"></i> Diseñar con IA</button>
+                <details class="ia-codigo"><summary>Ver y editar el código</summary><textarea id="ia-codigo" rows="10" spellcheck="false"></textarea></details>
+              </div>
+              <div class="campo" id="op-plantilla-campo">
+                <div class="campo__cabeza">Plantilla <button type="button" class="mini" id="btn-variante" title="Misma plantilla con otra composición"><i class="fa-solid fa-shuffle"></i> Otra variante</button></div>
+                <div class="plantillas" id="op-plantilla"></div>
+              </div>
+              <div class="campo">
+                <div class="campo__cabeza">Colores</div>
+                <div class="paletas" id="op-paleta"></div>
+              </div>
+              <div class="campo" id="op-encuadre">
+                <div class="campo__cabeza">Encuadre de la foto</div>
+                <div class="encuadre">
+                  <label><i class="fa-solid fa-arrows-left-right"></i><input type="range" id="op-fx" min="0" max="1" step="0.01"></label>
+                  <label><i class="fa-solid fa-arrows-up-down"></i><input type="range" id="op-fy" min="0" max="1" step="0.01"></label>
+                </div>
+              </div>
+              <button type="button" class="btn btn--sec btn--block" id="btn-diseno-todas"><i class="fa-solid fa-clone"></i> Usar esta plantilla y colores en todas</button>
+
+              <details class="textos" open>
+                <summary>Textos de la pieza <span class="ayuda">· iguales en todas las piezas</span></summary>
+                <div class="textos__grilla" id="op-textos"></div>
+                <div class="campo__cabeza">Ítems <span class="ayuda">recomendaciones y comunicados</span></div>
+                <div id="op-items" class="items-ed"></div>
+                <button type="button" class="mini" id="btn-item"><i class="fa-solid fa-plus"></i> Agregar ítem</button>
+              </details>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vista previa -->
+        <div class="panel" data-panel="previa" role="tabpanel">
+          <div class="previa" id="previa"></div>
+        </div>
+      </div>
+
+      <footer class="barra">
+        <span class="barra__estado" id="estado"><i class="fa-regular fa-circle"></i> Sin borrador</span>
+        <div class="barra__acciones">
+          <button type="button" class="btn btn--ghost-osc" id="btn-guardar"><i class="fa-regular fa-floppy-disk"></i> Guardar borrador</button>
+          <button type="button" class="btn btn--pri" id="btn-publicar" disabled><i class="fa-solid fa-paper-plane"></i> Publicar</button>
+        </div>
+      </footer>
+    </section>
+  </main>
+
+  <!-- Modal de publicación -->
+  <div class="modal" id="modal" hidden>
+    <div class="modal__caja" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+      <header><h2 id="modal-titulo">Publicar</h2><button type="button" class="ico" data-cerrar aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button></header>
+      <div class="modal__cuerpo" id="modal-cuerpo"></div>
+      <footer id="modal-pie"></footer>
+    </div>
+  </div>
+
+  <!-- Historial -->
+  <aside class="cajon" id="cajon" hidden aria-label="Publicaciones">
+    <header><h2><i class="fa-solid fa-clock-rotate-left"></i> Publicadas y borradores</h2><button type="button" class="ico" id="btn-cerrar-cajon" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button></header>
+    <div class="cajon__lista" id="historial"></div>
+    <footer><button type="button" class="mini mini--peligro" id="btn-reiniciar"><i class="fa-solid fa-trash-can"></i> Borrar datos de la demo</button></footer>
+  </aside>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/contexto.js"></script>
+  <script src="assets/js/ia.js"></script>
+  <script src="assets/js/voz.js"></script>
+  <script src="assets/js/plantillas.js"></script>
+  <script src="assets/js/fotos.js"></script>
+  <script src="assets/js/disenoHtml.js"></script>
+  <script src="assets/js/imagenes.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
