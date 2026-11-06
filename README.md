@@ -9,6 +9,8 @@ y las **versiones para cada red social**, listas para revisar, diseñar las imá
 1. **Dictar** (columna izquierda): chat con el asistente. El botón rojo graba un audio, que se transcribe con IA.
    Si falta algo imprescindible (qué, cuándo, dónde), el asistente pregunta; si alcanza, redacta. "Redactar ya con lo que conté" lo fuerza.
    Con una noticia ya armada se le pueden pedir cambios ("hacelo más corto", "sumá que hay inscripción").
+   Cada respuesta tiene arriba un botón **Escuchar** que la lee en voz alta con `/ia/speech` (la misma voz que MuniPoc y
+   Muni-Niño); el audio se genera una sola vez por mensaje. Sin IA usa la voz del navegador.
 2. **Noticia web**: título, bajada, categoría, fecha, dirección (slug) y párrafos, todo editable. Muestra el link final de la nota en Muni-Land.
 3. **Redes**: Facebook, Instagram, TikTok y X, cada una con interruptor, su texto, contador con el límite de la red y avisos
    (falta imagen, falta el link, se pasa del límite). `{{LINK}}` se reemplaza por el link de la nota.
@@ -55,6 +57,7 @@ y las **versiones para cada red social**, listas para revisar, diseñar las imá
 | Redacción | `POST https://server.brl-vcmp.com/ia/chat` con `perfil: "redaccion"` (Claude Haiku 5.5, ~USD 0,0013 por noticia) |
 | Diseño de las piezas | `POST /ia/chat` con `perfil: "diseno"` (Kimi K3.1 Pro, ~USD 0,07 por pieza) |
 | Transcripción del audio | `POST /ia/transcribe` (WAV 16 kHz mono en base64) |
+| Escuchar las respuestas | `POST /ia/speech` (ya existe en el proxy publicado; devuelve PCM, se le agrega cabecera WAV) |
 | Fotos ilustrativas | Wikimedia Commons y Openverse, directo desde el navegador (sin clave) |
 
 Los perfiles están en `BRLDiscord/controllers/IAProxyController.js` y **falta desplegarlos** en el servidor: el proxy publicado

@@ -117,5 +117,92 @@ window.Voz = (function () {
     else actual.rec.stop();
   }
 
-  return { iniciar: iniciar, terminar: terminar, grabando: function () { return !!actual; }, modo: modo };
+  return { iniciar: iniciar, terminar: terminar, grabando: function () { return !!actual; }, modo: modo, pcmAWav: pcmAWav };
+})();
+
+/* =========================================================
+   Lector: lee en voz alta las respuestas del asistente.
+   Con IA usa /ia/speech del proxy (la misma voz que MuniPoc y Muni-Niño;
+   devuelve PCM crudo, al que se le agrega cabecera WAV). Si la IA no está
+   activa o falla, usa la voz del navegador (speechSynthesis, español).
+   API: Lector.alternar(clave, texto, alCambiar(estado)) · Lector.detener()
+   estado: "cargando" | "sonando" | null
+   ========================================================= */
+window.Lector = (function () {
+  var C = window.NOT_CONFIG;
+  var reproductor = new Audio();
+  var urls = {};          // clave -> objectURL ya generado (no se vuelve a pagar el audio)
+  var actual = null;      // { clave, alCambiar }
+  var MAX_CHARS = 1900;   // el proxy acepta hasta 2000
+
+  // Texto apto para leer: sin marcadores, links ni emojis.
+  function limpiar(t) {
+    return String(t || "")
+      .replace(/\{\{LINK\}\}/g, "")
+      .replace(/https?:\/\/\S+/g, "")
+      .replace(/\*\*/g, "")
+      .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, "")
+      .replace(/\s+/g, " ").trim().slice(0, MAX_CHARS);
+  }
+
+  function avisar(estado) { if (actual && actual.alCambiar) actual.alCambiar(estado); }
+
+  function detener() {
+    reproductor.pause();
+    if (window.speechSynthesis) speechSynthesis.cancel();
+    if (actual) { var a = actual; actual = null; if (a.alCambiar) a.alCambiar(null); }
+  }
+
+  function sintetizar(texto) {
+    return fetch(C.apiBase + "/ia/speech", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ input: texto }) // modelo y voz los decide el proxy
+    }).then(function (r) {
+      if (!r.ok) throw new Error("voz " + r.status);
+      var tipo = r.headers.get("Content-Type") || "";
+      var rate = parseInt((tipo.match(/rate=(\d+)/) || [])[1], 10) || 24000;
+      return r.arrayBuffer().then(function (buf) {
+        return URL.createObjectURL(/wav|mpeg|mp3|ogg/.test(tipo) ? new Blob([buf], { type: tipo }) : Voz.pcmAWav(buf, rate));
+      });
+    });
+  }
+
+  function vozNavegador(texto, clave) {
+    if (!window.speechSynthesis) return Promise.reject(new Error("Este navegador no puede leer en voz alta."));
+    return new Promise(function (ok, mal) {
+      var u = new SpeechSynthesisUtterance(texto);
+      u.lang = "es-AR";
+      var voces = speechSynthesis.getVoices();
+      var v = voces.filter(function (x) { return /^es-(AR|419|US|MX)/i.test(x.lang); })[0] || voces.filter(function (x) { return /^es/i.test(x.lang); })[0];
+      if (v) u.voice = v;
+      u.rate = 1.02;
+      u.onstart = function () { if (actual && actual.clave === clave) avisar("sonando"); ok(); };
+      u.onend = function () { if (actual && actual.clave === clave) detener(); };
+      u.onerror = function (e) { if (e.error !== "canceled" && e.error !== "interrupted") mal(new Error("No se pudo leer el texto.")); };
+      speechSynthesis.speak(u);
+    });
+  }
+
+  reproductor.addEventListener("ended", function () { detener(); });
+
+  function alternar(clave, texto, alCambiar) {
+    if (actual && actual.clave === clave) { detener(); return Promise.resolve(); }
+    detener();
+    texto = limpiar(texto);
+    if (!texto) return Promise.resolve();
+    actual = { clave: clave, alCambiar: alCambiar };
+    var listo = urls[clave] ? Promise.resolve(urls[clave]) : (avisar("cargando"), IA.activa() ? sintetizar(texto) : Promise.reject(new Error("sin IA")));
+    return listo.then(function (url) {
+      urls[clave] = url;
+      if (!actual || actual.clave !== clave) return;   // lo cancelaron mientras cargaba
+      reproductor.src = url;
+      return reproductor.play().then(function () { avisar("sonando"); });
+    }).catch(function (e) {
+      if (!actual || actual.clave !== clave) return;
+      console.warn("Lector: se usa la voz del navegador", e);
+      return vozNavegador(texto, clave).catch(function (e2) { detener(); throw e2; });
+    });
+  }
+
+  return { alternar: alternar, detener: detener, sonando: function () { return actual && actual.clave; } };
 })();

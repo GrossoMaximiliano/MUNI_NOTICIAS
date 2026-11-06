@@ -112,11 +112,11 @@
   function pintarChat() {
     var cont = $("#chat-mensajes");
     var msjs = [{ rol: "asistente", texto: saludo(), hora: "" }].concat(S.chat);
-    cont.innerHTML = msjs.map(function (m) {
+    cont.innerHTML = msjs.map(function (m, i) {
       var extra = "";
       if (m.preguntas && m.preguntas.length) extra += "<ul>" + m.preguntas.map(function (p) { return "<li>" + esc(p) + "</li>"; }).join("") + "</ul>";
       if (m.listo) extra += '<button type="button" class="mini mini--claro" data-ir="web"><i class="fa-solid fa-arrow-right"></i> Ver y editar la noticia</button>';
-      return '<div class="msj msj--' + m.rol + (m.local ? " msj--local" : "") + '"><div class="burbuja">' +
+      return '<div class="msj msj--' + m.rol + (m.local ? " msj--local" : "") + '">' + botonEscuchar(m, i) + '<div class="burbuja">' +
         (m.voz ? '<span class="msj__voz"><i class="fa-solid fa-microphone"></i> Audio transcripto</span>' : "") +
         esc(m.texto).replace(/\n/g, "<br>") + extra + '</div><span class="msj__hora">' + (m.hora || "") + "</span></div>";
     }).join("") + (ocupado ? '<div class="msj msj--asistente"><div class="burbuja escribiendo"><span></span><span></span><span></span></div></div>' : "");
@@ -128,6 +128,26 @@
     $("#btn-forzar").hidden = !S.chat.some(function (m) { return m.rol === "usuario"; }) || ocupado;
     $("#btn-enviar").disabled = ocupado;
     $("#btn-mic").disabled = ocupado;
+  }
+
+  /* Escuchar las respuestas: botón arriba de cada mensaje del asistente. */
+  var estadoAudio = {}; // índice del mensaje -> "cargando" | "sonando"
+  function mensajesChat() { return [{ rol: "asistente", texto: saludo(), hora: "" }].concat(S.chat); }
+  function textoParaLeer(m) { return [m.texto].concat(m.preguntas || []).join(". "); }
+  function botonEscuchar(m, i) {
+    if (m.rol !== "asistente") return "";
+    var est = estadoAudio[i];
+    var etiqueta = est === "sonando" ? "Detener" : est === "cargando" ? "Generando audio…" : "Escuchar";
+    var icono = est === "sonando" ? '<i class="fa-solid fa-stop"></i>' : est === "cargando" ? '<span class="girando girando--osc"></span>' : '<i class="fa-solid fa-volume-high"></i>';
+    return '<button type="button" class="msj__escuchar' + (est ? " msj__escuchar--" + est : "") + '" data-escuchar="' + i + '" aria-label="' + etiqueta + ' la respuesta">' + icono + "<span>" + etiqueta + "</span></button>";
+  }
+  function escuchar(i) {
+    var m = mensajesChat()[i]; if (!m) return;
+    Lector.alternar("msj-" + S.id + "-" + i, textoParaLeer(m), function (estado) {
+      if (estado) estadoAudio = {}, estadoAudio[i] = estado; else delete estadoAudio[i];
+      var b = $('[data-escuchar="' + i + '"]');
+      if (b) b.outerHTML = botonEscuchar(m, i);
+    }).catch(function (e) { toast(e.message, "error"); });
   }
 
   function borradorParaIA() {
@@ -886,6 +906,7 @@
   function nueva(confirmado) {
     if (!confirmado && S.noticia && !confirm("¿Empezar una noticia nueva? Se descarta el borrador actual.")) return;
     S = estadoVacio(); imgSel = null; cache = {};
+    Lector.detener(); estadoAudio = {};
     persistir(false);
     pintarTodo(); irTab("web"); vistaMovil("chat");
     $("#chat-input").focus();
@@ -897,7 +918,10 @@
     $("#chat-form").addEventListener("submit", function (e) { e.preventDefault(); var t = input.value; input.value = ""; enviar(t); });
     input.addEventListener("keydown", function (e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("#chat-form").requestSubmit(); } });
     $("#chat-chips").addEventListener("click", function (e) { var b = e.target.closest("[data-ej]"); if (b) { input.value = EJEMPLOS[+b.getAttribute("data-ej")].x; input.focus(); } });
-    $("#chat-mensajes").addEventListener("click", function (e) { var b = e.target.closest("[data-ir]"); if (b) irTab(b.getAttribute("data-ir")); });
+    $("#chat-mensajes").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-ir]"); if (b) irTab(b.getAttribute("data-ir"));
+      var a = e.target.closest("[data-escuchar]"); if (a) escuchar(+a.getAttribute("data-escuchar"));
+    });
     $("#btn-forzar").addEventListener("click", function () { enviar("Con lo que te conté alcanza: redactá la noticia y los textos para redes ahora, sin preguntar más. No inventes lo que falta."); });
 
     // Voz
@@ -912,6 +936,7 @@
     }
     mic.addEventListener("click", function () {
       if (Voz.grabando()) { Voz.terminar(false); return; }
+      Lector.detener();
       modoGrabando(true);
       Voz.iniciar({
         alTick: function (s) { $("#voz-reloj").textContent = Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); },
